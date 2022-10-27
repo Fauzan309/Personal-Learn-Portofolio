@@ -1,149 +1,58 @@
 //
 //  ContentView.swift
-//  ToDo CoreData
+//  FormUI
 //
-//  Created by Fauzan Nugraha on 13/10/22.
+//  Created by Fauzan Nugraha on 27/10/22.
 //
 
 import SwiftUI
 
-enum Priority: String, Identifiable, CaseIterable { // identify the variable
-    var id: UUID {
-        return UUID()
-    }
-    
-    case low = "Low"
-    case medium = "Medium"
-    case high = "High"
-}
-
-extension Priority {
-    var title: String {
-        switch self { // Switch case
-        case .low:
-            return "Low"
-        case .medium:
-            return "Medium"
-        case .high:
-            return "High"
-        }
-    }
-}
-
 struct ContentView: View {
     
-    @State private var title: String = ""
-    @State private var selectedPriorty: Priority = .medium
-    @Environment(\.managedObjectContext) private var viewContext
-    @FetchRequest(entity: Task.entity(), sortDescriptors: [NSSortDescriptor(key: "dateCreated", ascending: false)]) private var allTask: FetchedResults<Task>
-    
-    func saveTasks() {
-        
-        do {
-            let task = Task(context: viewContext)
-            task.title = title
-            task.priority = selectedPriorty.rawValue
-            task.dateCreated = Date()
-            try viewContext.save()
-        } catch {
-            print(error.localizedDescription)
-        }
-        
-    }
-    
-    private func styleForPriority(_ value: String) -> Color  { // for return the value to color
-        
-        let priority = Priority(rawValue: value)
-        
-        switch priority {
-        case .low:
-           return Color.green
-        case .medium:
-            return Color.orange
-        case .high:
-            return Color.red
-        default :
-            return Color.black
-        }
-    }
-    
-    private func updateTask(_ task: Task) {
-        
-        task.isFavorite = !task.isFavorite
-        
-        do{
-            try viewContext.save()
-        } catch {
-            print(error.localizedDescription)
-        }
-    }
-    
-    private func deleteTask(at offsets: IndexSet) {
-        offsets.forEach { index in
-            let task = allTask[index]
-            viewContext.delete(task)
-            do{
-                try viewContext.save()
-            } catch {
-                print(error.localizedDescription)
-            }
-        }
-    }
+    @State private var firstName = ""
+    @State private var lastName = ""
+    @State private var passwordField = ""
+    @State private var confPassword = ""
+    @State private var birthDate = Date()
+    @State private var sendNewsletter = false
+    @State private var numberofLike = 1
     
     var body: some View {
         NavigationView {
-            
-            VStack {
-                TextField("Enter Title", text: $title)
-                    .textFieldStyle(.roundedBorder)
-                
-                Picker("Priority", selection: $selectedPriorty){
-                    ForEach(Priority.allCases) { priority in
-                        Text(priority.title).tag(priority)
-                    }
-                }.pickerStyle(.segmented)
-                
-                Button("Save") {
-                    saveTasks()
-                    
-                } .padding(10)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.green)
-                    .foregroundColor(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 10.0, style: .continuous))
-                
-                List {
-                    
-                    ForEach(allTask) { task in
-                        HStack{
-                            
-                            Circle()
-                                .fill(styleForPriority(task.priority!))
-                                .frame(width: 15, height: 15)
-                            Spacer().frame(width: 20)
-                            Text(task.title ?? "")
-                            Spacer()
-                            Image(systemName: task.isFavorite ? "heart.fill" : "heart")
-                                .foregroundColor(.red)
-                                .onTapGesture {
-                                    updateTask(task)
-                                }
-                        }
-                    } .onDelete(perform: deleteTask)
+            Form{
+                Section(header: Text("Personal Information"))
+                {
+                    TextField("First Name", text: $firstName)
+                    TextField("Last Name", text: $lastName)
+                    SecureField("Enter Password", text: $passwordField)
+                    SecureField("Confirm Password", text: $confPassword)
+                    DatePicker("Birthdate", selection: $birthDate, displayedComponents: .date)
                 }
                 
-                Spacer()
+                Section(header: Text("Action")){
+                    Toggle("Send Newsletter", isOn: $sendNewsletter)
+                    Stepper("Number of Likes", value: $numberofLike, in: 1...100)
+                    Text("Count to \(numberofLike)")
+                    Link("Watch some Video", destination: URL(string: "https://youtube.com")!)
+                }
+                
             }
-            .padding()
-            .navigationTitle("All Task")
+            .navigationTitle("Profile")
+            .toolbar {
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                   Button("Save", action: saveUser )
+                }
+            }
         }
     }
     
-    struct ContentView_Previews: PreviewProvider {
-        static var previews: some View {
-            
-            let persistedContainer = CoreDataManager.shared.persistentContainer
-            ContentView().environment(\.managedObjectContext, persistedContainer.viewContext)
-        }
+    func saveUser() {
+        print("Saved!")
+    }
+}
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
     }
 }
